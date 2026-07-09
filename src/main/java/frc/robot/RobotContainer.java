@@ -10,6 +10,9 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -35,6 +39,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
+  private final Limelight limelight;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -44,6 +49,7 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    limelight = new Limelight();
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -128,6 +134,23 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
+  public Translation2d getTranslationToHub() {
+    if (DriverStation.getAlliance().isEmpty()) {
+      return new Translation2d(0, 0);
+    }
+    if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) {
+      Translation2d originToBlueHub =
+          new Translation2d(Units.inchesToMeters(181.56), Units.inchesToMeters(158.32));
+      Translation2d blue = drive.getPose().getTranslation().minus(originToBlueHub).unaryMinus();
+      return blue;
+    } else {
+      Translation2d originToRedHub =
+          new Translation2d(Units.inchesToMeters(181.56 + 287), Units.inchesToMeters(158.32));
+      Translation2d red = drive.getPose().getTranslation().minus(originToRedHub).unaryMinus();
+      return red;
+    }
+  }
+
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
@@ -137,7 +160,33 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // Lock to 0° when A button is held
+    // Lock to 0° when X button is held
+    // controller
+    //     .x()
+    //     .whileTrue(
+    //         DriveCommands.joystickDriveAtAngle(
+    //             drive,
+    //             () -> -controller.getLeftY(),
+    //             () -> -controller.getLeftX(),
+    //             () -> Rotation2d.kZero));
+
+    // Lock to Hub when A button is held
+
+    // Switch to X pattern when X button is pressed
+    //controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+
+    // Reset gyro to 0° when B button is pressed
+    // controller
+    //     .b()
+    //     .onTrue(
+    //         Commands.runOnce(
+    //                 () ->
+    //                     drive.setPose(
+    //                         new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+    //                 drive)
+    //             .ignoringDisable(true));
+
+
     controller
         .a()
         .whileTrue(
@@ -145,21 +194,29 @@ public class RobotContainer {
                 drive,
                 () -> -controller.getLeftY(),
                 () -> -controller.getLeftX(),
-                () -> Rotation2d.kZero));
+                () -> getTranslationToHub().getAngle()));
 
-    // Switch to X pattern when X button is pressed
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    
+  }
 
-    // Reset gyro to 0° when B button is pressed
-    controller
-        .b()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-                    drive)
-                .ignoringDisable(true));
+  public void updateOdoFromVision() {
+    limelight.updateOdo(drive);
+  }
+
+  public void updateDisabledOdoFromVision() {
+    limelight.updateDisabledOdo(drive);
+  }
+
+  public void setAutonDeviations() {
+    drive.setAutonDeviations();
+  }
+
+  public void setDisabledDeviations() {
+    drive.setDisabledDeviations();
+  }
+
+  public void setTeleopDeviations() {
+    drive.setEnabledDeviations();
   }
 
   /**

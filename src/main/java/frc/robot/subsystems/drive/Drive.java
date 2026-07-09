@@ -20,6 +20,7 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -95,7 +96,41 @@ public class Drive extends SubsystemBase {
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
-  private SwerveDrivePoseEstimator poseEstimator =
+
+  public void setAutonDeviations() {
+    SwerveDrivePoseEstimator poseEstimator =
+        new SwerveDrivePoseEstimator(
+            kinematics,
+            rawGyroRotation,
+            lastModulePositions,
+            Pose2d.kZero,
+            null,
+            VecBuilder.fill(0.1, 0.1, 9999999));
+  }
+
+  public void setEnabledDeviations() {
+    SwerveDrivePoseEstimator poseEstimator =
+        new SwerveDrivePoseEstimator(
+            kinematics,
+            rawGyroRotation,
+            lastModulePositions,
+            Pose2d.kZero,
+            null,
+            VecBuilder.fill(0.05, 0.05, 9999999));
+  }
+
+  public void setDisabledDeviations() {
+    SwerveDrivePoseEstimator poseEstimator =
+        new SwerveDrivePoseEstimator(
+            kinematics,
+            rawGyroRotation,
+            lastModulePositions,
+            Pose2d.kZero,
+            null,
+            VecBuilder.fill(0.05, 0.05, 0.3));
+  }
+
+  SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
   public Drive(
@@ -329,6 +364,10 @@ public class Drive extends SubsystemBase {
   }
 
   /** Adds a new timestamped vision measurement. */
+  public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
+    poseEstimator.addVisionMeasurement(visionRobotPoseMeters, timestampSeconds);
+  }
+
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
