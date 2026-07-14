@@ -170,7 +170,7 @@ public class RobotContainer {
     // Lock to Hub when A button is held
 
     // Switch to X pattern when X button is pressed
-    //controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0° when B button is pressed
     // controller
@@ -183,7 +183,6 @@ public class RobotContainer {
     //                 drive)
     //             .ignoringDisable(true));
 
-
     controller
         .a()
         .whileTrue(
@@ -192,8 +191,6 @@ public class RobotContainer {
                 () -> -controller.getLeftY(),
                 () -> -controller.getLeftX(),
                 () -> getTranslationToHub().getAngle()));
-
-    
   }
 
   public void updateOdoFromVision() {
