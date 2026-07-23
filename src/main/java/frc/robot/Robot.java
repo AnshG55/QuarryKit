@@ -84,8 +84,6 @@ public class Robot extends LoggedRobot {
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    robotContainer.updateDisabledOdoFromVision();
-    robotContainer.updateOdoFromVision();
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
@@ -94,7 +92,7 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {
-    robotContainer.setDisabledDeviations();
+    robotContainer.setIMUMODE(1);
   }
 
   /** This function is called periodically when disabled. */
@@ -105,8 +103,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     autonomousCommand = robotContainer.getAutonomousCommand();
-    robotContainer.setAutonDeviations();
 
+    robotContainer.setIMUMODE(2);
     // schedule the autonomous command (example)
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
@@ -124,7 +122,8 @@ public class Robot extends LoggedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
-    robotContainer.setTeleopDeviations();
+
+    robotContainer.setIMUMODE(2);
 
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
