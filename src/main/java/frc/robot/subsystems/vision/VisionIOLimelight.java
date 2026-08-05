@@ -73,7 +73,7 @@ public class VisionIOLimelight implements VisionIO {
     // Read new pose observations from NetworkTables
     Set<Integer> tagIds = new HashSet<>();
     List<PoseObservation> poseObservations = new LinkedList<>();
-    if (DriverStation.isDisabled()) {
+    if (!DriverStation.isEnabled()) {
       for (var rawSample : megatag1Subscriber.readQueue()) {
         if (rawSample.value.length == 0) continue;
         for (int i = 11; i < rawSample.value.length; i += 7) {
