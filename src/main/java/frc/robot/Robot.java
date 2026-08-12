@@ -93,6 +93,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledInit() {
     robotContainer.setIMUMODE(1);
+    robotContainer.setIMUAssist(0.001);
   }
 
   /** This function is called periodically when disabled. */
@@ -104,7 +105,8 @@ public class Robot extends LoggedRobot {
   public void autonomousInit() {
     autonomousCommand = robotContainer.getAutonomousCommand();
 
-    robotContainer.setIMUMODE(2);
+    robotContainer.setIMUMODE(4);
+    robotContainer.setIMUAssist(0.001);
     // schedule the autonomous command (example)
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
@@ -123,7 +125,8 @@ public class Robot extends LoggedRobot {
     // continue until interrupted by another command, remove
     // this line or comment it out.
 
-    robotContainer.setIMUMODE(2);
+    robotContainer.setIMUMODE(4);
+    robotContainer.setIMUAssist(0.001);
 
     if (autonomousCommand != null) {
       autonomousCommand.cancel();

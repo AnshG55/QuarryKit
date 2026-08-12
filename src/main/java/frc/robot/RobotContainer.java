@@ -42,7 +42,6 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Vision vision;
-  private final LimelightHelpers limelightHelpers;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -52,7 +51,6 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    limelightHelpers = new LimelightHelpers();
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -151,8 +149,13 @@ public class RobotContainer {
   }
 
   public void setIMUMODE(int mode) {
-    limelightHelpers.SetIMUMode(camera0Name, mode);
-    limelightHelpers.SetIMUMode(camera0Name, mode);
+    LimelightHelpers.SetIMUMode(camera0Name, mode);
+    LimelightHelpers.SetIMUMode(camera1Name, mode);
+  }
+
+  public void setIMUAssist(double num) {
+    LimelightHelpers.SetIMUAssistAlpha(camera0Name, num);
+    LimelightHelpers.SetIMUAssistAlpha(camera1Name, num);
   }
 
   private void configureButtonBindings() {
