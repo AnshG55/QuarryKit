@@ -12,6 +12,7 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -157,6 +158,18 @@ public class RobotContainer {
     }
   }
 
+  private Command pathfindToPose(Pose2d targetPose) {
+    PathConstraints constraints =
+        new PathConstraints(
+            drive.getMaxLinearSpeedMetersPerSec(), // Max velocity m/s
+            drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
+            8, // Max angular velocity rad/s
+            20 // Max angular acceleration rad/s²
+            );
+
+    return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
+  }
+
   public void setIMUMODE(int mode) {
     LimelightHelpers.SetIMUMode(camera0Name, mode);
     LimelightHelpers.SetIMUMode(camera1Name, mode);
@@ -212,12 +225,19 @@ public class RobotContainer {
     //             () -> getTranslationToHub().getAngle()));
 
     // In METERS, METERS, RADS
+    // controller
+    //     .a()
+    //     .whileTrue(
+    //         new SequentialCommandGroup(
+    //             DriveCommands.DriveToPose2D(
+    //                 drive, new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(60)))),
+    //             new PathPlannerAuto("Example Auto")));
+
     controller
         .a()
         .whileTrue(
             new SequentialCommandGroup(
-                DriveCommands.DriveToPose2D(
-                    drive, new Pose2d(3, 2, new Rotation2d(Units.degreesToRadians(60)))),
+                pathfindToPose(new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)))),
                 new PathPlannerAuto("Example Auto")));
   }
 
