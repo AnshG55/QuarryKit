@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
@@ -173,7 +172,7 @@ public class RobotContainer {
     // Lock to Hub when A button is held
 
     // Switch to X pattern when X button is pressed
-    //controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0° when B button is pressed
     // controller
@@ -186,17 +185,23 @@ public class RobotContainer {
     //                 drive)
     //             .ignoringDisable(true));
 
+    // controller
+    //     .a()
+    //     .whileTrue(
+    //         DriveCommands.joystickDriveAtAngle(
+    //             drive,
+    //             () -> -controller.getLeftY(),
+    //             () -> -controller.getLeftX(),
+    //             () -> getTranslationToHub().getAngle()));
 
     controller
         .a()
         .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
+            DriveCommands.joystickDriveToPose2D(
                 drive,
-                () -> -controller.getLeftY(),
-                () -> -controller.getLeftX(),
-                () -> getTranslationToHub().getAngle()));
-
-    
+                new Pose2d(
+                    new Translation2d(Units.metersToInches(2.857), Units.metersToInches(4.821)),
+                    new Rotation2d(0))));
   }
 
   public void updateOdoFromVision() {
