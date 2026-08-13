@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
   private static final double[] rotationPID = {5, 0, 0.4};
-  private static final double[] translationPID = {0, 0, 0};
+  private static final double[] translationPID = {5, 0, 0};
   private static final double ANGLE_MAX_VELOCITY = 8.0;
   private static final double ANGLE_MAX_ACCELERATION = 20.0;
   private static final double FF_START_DELAY = 2.0; // Secs
@@ -150,66 +150,64 @@ public class DriveCommands {
         .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
   }
 
-  public static Command joystickDriveToPose2D(Drive drive, Pose2d targetPose2d) {
+  public static Command DriveToPose2D(Drive drive, Pose2d targetPose2d) {
 
-    // Create PID controller
     ProfiledPIDController angleController =
         new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
+            rotationPID[0],
+            rotationPID[1],
+            rotationPID[2],
             new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     ProfiledPIDController xPosController =
         new ProfiledPIDController(
-            5,
-            0,
-            0,
-            new TrapezoidProfile.Constraints(drive.getMaxLinearSpeedMetersPerSec(), 7.875));
+            translationPID[0],
+            translationPID[1],
+            translationPID[2],
+            new TrapezoidProfile.Constraints(
+                drive.getMaxLinearSpeedMetersPerSec(), drive.getMaxLinearSpeedMetersPerSecSq()));
 
     ProfiledPIDController yPosController =
         new ProfiledPIDController(
-            5,
-            0,
-            0,
-            new TrapezoidProfile.Constraints(drive.getMaxLinearSpeedMetersPerSec(), 7.875));
+            translationPID[0],
+            translationPID[1],
+            translationPID[2],
+            new TrapezoidProfile.Constraints(
+                drive.getMaxLinearSpeedMetersPerSec(), drive.getMaxLinearSpeedMetersPerSecSq()));
 
-    // Construct command
+    xPosController.setTolerance(0.02);
+    yPosController.setTolerance(0.02);
+    angleController.setTolerance(Units.degreesToRadians(2.0));
+
     return Commands.run(
             () -> {
-              // Get linear velocity
-              Translation2d targetTranslation2d =
-                  new Translation2d(
-                      xPosController.calculate(
-                          Units.inchesToMeters(drive.getPose().getX()),
-                          Units.inchesToMeters(targetPose2d.getX())),
-                      yPosController.calculate(
-                          Units.inchesToMeters(drive.getPose().getY()),
-                          Units.inchesToMeters(targetPose2d.getY())));
+              Pose2d currentPose = drive.getPose();
+              double xVelocity = xPosController.calculate(currentPose.getX(), targetPose2d.getX());
+              double yVelocity = yPosController.calculate(currentPose.getY(), targetPose2d.getY());
 
-              // Calculate angular speed
               double omega =
                   angleController.calculate(
-                      drive.getRotation().getRadians(), targetPose2d.getRotation().getRadians());
+                      currentPose.getRotation().getRadians(),
+                      targetPose2d.getRotation().getRadians());
 
-              // Convert to field relative speeds & send command
               ChassisSpeeds speeds =
-                  new ChassisSpeeds(targetTranslation2d.getX(), targetTranslation2d.getY(), omega);
-              boolean isFlipped =
-                  DriverStation.getAlliance().isPresent()
-                      && DriverStation.getAlliance().get() == Alliance.Red;
-              drive.runVelocity(
                   ChassisSpeeds.fromFieldRelativeSpeeds(
-                      speeds,
-                      isFlipped
-                          ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                          : drive.getRotation()));
+                      xVelocity, yVelocity, omega, currentPose.getRotation());
+
+              drive.runVelocity(speeds);
             },
             drive)
-
-        // Reset PID controller when command starts
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+        .beforeStarting(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              xPosController.reset(currentPose.getX());
+              yPosController.reset(currentPose.getY());
+              angleController.reset(currentPose.getRotation().getRadians());
+            })
+        .until(
+            () -> xPosController.atGoal() && yPosController.atGoal() && angleController.atGoal());
   }
   /**
    * Measures the velocity feedforward constants for the drive motors.
