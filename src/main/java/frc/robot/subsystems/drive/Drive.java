@@ -20,7 +20,6 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -33,7 +32,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -66,6 +64,8 @@ public class Drive extends SubsystemBase {
   private static final double ROBOT_MASS_KG = 74.088;
   private static final double ROBOT_MOI = 6.883;
   private static final double WHEEL_COF = 1.2;
+  private final double[] translationPID = {5, 0, 0};
+  private final double[] rotationPID = {5, 0, 0};
   private static final RobotConfig PP_CONFIG =
       new RobotConfig(
           ROBOT_MASS_KG,
@@ -98,39 +98,6 @@ public class Drive extends SubsystemBase {
         new SwerveModulePosition()
       };
 
-  public void setAutonDeviations() {
-    SwerveDrivePoseEstimator poseEstimator =
-        new SwerveDrivePoseEstimator(
-            kinematics,
-            rawGyroRotation,
-            lastModulePositions,
-            Pose2d.kZero,
-            VecBuilder.fill(0.1, 0.1, Units.degreesToRadians(5)),
-            VecBuilder.fill(0.1, 0.1, 9999999));
-  }
-
-  public void setEnabledDeviations() {
-    SwerveDrivePoseEstimator poseEstimator =
-        new SwerveDrivePoseEstimator(
-            kinematics,
-            rawGyroRotation,
-            lastModulePositions,
-            Pose2d.kZero,
-            VecBuilder.fill(0.1, 0.1, Units.degreesToRadians(5)),
-            VecBuilder.fill(0.05, 0.05, 9999999));
-  }
-
-  public void setDisabledDeviations() {
-    SwerveDrivePoseEstimator poseEstimator =
-        new SwerveDrivePoseEstimator(
-            kinematics,
-            rawGyroRotation,
-            lastModulePositions,
-            Pose2d.kZero,
-            VecBuilder.fill(0.1, 0.1, Units.degreesToRadians(5)),
-            VecBuilder.fill(0.05, 0.05, 0.3));
-  }
-
   SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
@@ -159,7 +126,8 @@ public class Drive extends SubsystemBase {
         this::getChassisSpeeds,
         this::runVelocity,
         new PPHolonomicDriveController(
-            new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
+            new PIDConstants(translationPID[0], translationPID[1], translationPID[2]),
+            new PIDConstants(rotationPID[0], rotationPID[1], rotationPID[2])),
         PP_CONFIG,
         () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this);
