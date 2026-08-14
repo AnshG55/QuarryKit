@@ -32,6 +32,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.intakearm.IntakeArm;
+import frc.robot.subsystems.intakearm.IntakeArmIO;
+import frc.robot.subsystems.intakearm.IntakeArmIOSim;
+import frc.robot.subsystems.intakearm.IntakeArmIOTalonFX;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
@@ -48,6 +52,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Vision vision;
+  private final IntakeArm intakeArm;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -75,6 +80,8 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOLimelight(camera0Name, drive::getRotation),
                 new VisionIOLimelight(camera1Name, drive::getRotation));
+
+        intakeArm = new IntakeArm(new IntakeArmIOTalonFX());
         break;
 
       case SIM:
@@ -92,6 +99,8 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
+
+        intakeArm = new IntakeArm(new IntakeArmIOSim());
         break;
 
       default:
@@ -105,6 +114,8 @@ public class RobotContainer {
                 new ModuleIO() {});
 
         vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+
+        intakeArm = new IntakeArm(new IntakeArmIO() {});
         break;
     }
 
@@ -239,6 +250,8 @@ public class RobotContainer {
             new SequentialCommandGroup(
                 pathfindToPose(new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)))),
                 new PathPlannerAuto("Example Auto")));
+
+    // controller.a().whileTrue(intakeArm.IntakeArmUp());
   }
 
   /**
