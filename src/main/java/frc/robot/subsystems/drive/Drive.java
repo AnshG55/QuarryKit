@@ -350,6 +350,10 @@ public class Drive extends SubsystemBase {
     return TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
   }
 
+  public double getMaxLinearSpeedMetersPerSecSq() {
+    return 7.875;
+  }
+
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
     return getMaxLinearSpeedMetersPerSec() / DRIVE_BASE_RADIUS;

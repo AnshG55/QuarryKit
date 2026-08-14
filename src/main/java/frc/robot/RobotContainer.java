@@ -10,12 +10,18 @@ package frc.robot;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathConstraints;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
@@ -102,6 +108,10 @@ public class RobotContainer {
         break;
     }
 
+    NamedCommands.registerCommand(
+        "Get to Start",
+        DriveCommands.DriveToPose2D(drive, new Pose2d(1, 1, new Rotation2d(Math.PI))));
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -146,6 +156,18 @@ public class RobotContainer {
       Translation2d red = drive.getPose().getTranslation().minus(originToRedHub).unaryMinus();
       return red;
     }
+  }
+
+  private Command pathfindToPose(Pose2d targetPose) {
+    PathConstraints constraints =
+        new PathConstraints(
+            drive.getMaxLinearSpeedMetersPerSec(), // Max velocity m/s
+            drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
+            8, // Max angular velocity rad/s
+            20 // Max angular acceleration rad/s²
+            );
+
+    return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
   }
 
   public void setIMUMODE(int mode) {
@@ -193,14 +215,30 @@ public class RobotContainer {
     //                 drive)
     //             .ignoringDisable(true));
 
+    // controller
+    //     .a()
+    //     .whileTrue(
+    //         DriveCommands.joystickDriveAtAngle(
+    //             drive,
+    //             () -> -controller.getLeftY(),
+    //             () -> -controller.getLeftX(),
+    //             () -> getTranslationToHub().getAngle()));
+
+    // In METERS, METERS, RADS
+    // controller
+    //     .a()
+    //     .whileTrue(
+    //         new SequentialCommandGroup(
+    //             DriveCommands.DriveToPose2D(
+    //                 drive, new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(60)))),
+    //             new PathPlannerAuto("Example Auto")));
+
     controller
         .a()
         .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive,
-                () -> -controller.getLeftY(),
-                () -> -controller.getLeftX(),
-                () -> getTranslationToHub().getAngle()));
+            new SequentialCommandGroup(
+                pathfindToPose(new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)))),
+                new PathPlannerAuto("Example Auto")));
   }
 
   /**
