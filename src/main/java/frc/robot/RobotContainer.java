@@ -13,6 +13,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -170,6 +171,21 @@ public class RobotContainer {
     return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
   }
 
+  private Command pathFindToParticularPose() {
+    final Pose2d blueTowerStart =
+        new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)));
+    final Pose2d redTowerStart = FlippingUtil.flipFieldPose(blueTowerStart);
+
+    if (DriverStation.getAlliance().isEmpty()) {
+      return pathfindToPose(new Pose2d(0, 0, new Rotation2d(0)));
+    }
+    if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) {
+      return pathfindToPose(blueTowerStart);
+    } else {
+      return pathfindToPose(redTowerStart);
+    }
+  }
+
   public void setIMUMODE(int mode) {
     LimelightHelpers.SetIMUMode(camera0Name, mode);
     LimelightHelpers.SetIMUMode(camera1Name, mode);
@@ -180,7 +196,11 @@ public class RobotContainer {
     LimelightHelpers.SetIMUAssistAlpha(camera1Name, num);
   }
 
-  private void configureButtonBindings() {
+  public void setDynamicObstacles() {
+    drive.setDynamicRobotObstacles();
+  }
+
+  public void configureButtonBindings() {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
@@ -237,8 +257,7 @@ public class RobotContainer {
         .a()
         .whileTrue(
             new SequentialCommandGroup(
-                pathfindToPose(new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)))),
-                new PathPlannerAuto("Example Auto")));
+                pathFindToParticularPose(), new PathPlannerAuto("Example Auto")));
   }
 
   /**

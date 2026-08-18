@@ -127,6 +127,7 @@ public class Robot extends LoggedRobot {
 
     robotContainer.setIMUMODE(4);
     robotContainer.setIMUAssist(0.001);
+    robotContainer.configureButtonBindings();
 
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
@@ -135,7 +136,9 @@ public class Robot extends LoggedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    //robotContainer.setDynamicObstacles();
+  }
 
   /** This function is called once when test mode is enabled. */
   @Override
