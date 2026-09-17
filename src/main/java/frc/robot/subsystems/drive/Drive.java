@@ -67,7 +67,7 @@ public class Drive extends SubsystemBase {
   private static final double ROBOT_MASS_KG = 74.088;
   private static final double ROBOT_MOI = 6.883;
   private static final double WHEEL_COF = 1.2;
-  private final double[] translationPID = {5, 0, 0};
+  private final double[] translationPID = {5, 0.001, 0.005};
   private final double[] rotationPID = {5, 0, 0};
   private static final RobotConfig PP_CONFIG =
       new RobotConfig(
@@ -163,8 +163,8 @@ public class Drive extends SubsystemBase {
   public void setDynamicRobotObstacles() {
     List<Pose2d> detectedRobots =
         List.of(
-            //new Pose2d(5.0, 3.0, Rotation2d.fromDegrees(74)),
-            //new Pose2d(5.0, 2.0, Rotation2d.fromDegrees(224))
+            // new Pose2d(5.0, 3.0, Rotation2d.fromDegrees(74)),
+            // new Pose2d(5.0, 2.0, Rotation2d.fromDegrees(224))
             );
 
     List<Pair<Translation2d, Translation2d>> obstacles = new ArrayList<>();
@@ -392,7 +392,7 @@ public class Drive extends SubsystemBase {
   }
 
   public double getMaxLinearSpeedMetersPerSecSq() {
-    return 7.875;
+    return 6;
   }
 
   /** Returns the maximum angular speed in radians per sec. */

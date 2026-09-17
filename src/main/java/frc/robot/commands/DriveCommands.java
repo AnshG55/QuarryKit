@@ -210,6 +210,70 @@ public class DriveCommands {
             () -> xPosController.atGoal() && yPosController.atGoal() && angleController.atGoal());
   }
 
+  public static Command DriveASQ(Drive drive) {
+    ProfiledPIDController xPosController =
+        new ProfiledPIDController(
+            translationPID[0],
+            translationPID[1],
+            translationPID[2],
+            new TrapezoidProfile.Constraints(
+                drive.getMaxLinearSpeedMetersPerSec(), drive.getMaxLinearSpeedMetersPerSecSq()));
+
+    ProfiledPIDController yPosController =
+        new ProfiledPIDController(
+            translationPID[0],
+            translationPID[1],
+            translationPID[2],
+            new TrapezoidProfile.Constraints(
+                drive.getMaxLinearSpeedMetersPerSec(), drive.getMaxLinearSpeedMetersPerSecSq()));
+
+    xPosController.setTolerance(0.02);
+    yPosController.setTolerance(0.02);
+
+    Pose2d initialPose = drive.getPose();
+
+    return Commands.run(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              double xVelocity = xPosController.calculate(currentPose.getX(), currentPose.getX());
+              double yVelocity =
+                  yPosController.calculate(currentPose.getX(), initialPose.getY() - 1);
+              System.out.println(xVelocity);
+              System.out.println(xVelocity);
+
+              ChassisSpeeds speeds = (new ChassisSpeeds(0, yVelocity, 0));
+
+              drive.runVelocity(speeds);
+            },
+            drive)
+        .beforeStarting(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              xPosController.reset(currentPose.getX());
+              yPosController.reset(currentPose.getY());
+            })
+        .until(() -> xPosController.atGoal() && yPosController.atGoal())
+        .andThen(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              double xVelocity =
+                  xPosController.calculate(currentPose.getX(), initialPose.getX() - 1);
+              double yVelocity = yPosController.calculate(currentPose.getY(), currentPose.getY());
+
+              ChassisSpeeds speeds = (new ChassisSpeeds(xVelocity, 0, 0));
+
+              drive.runVelocity(speeds);
+            },
+            drive)
+        .beforeStarting(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              xPosController.reset(currentPose.getX());
+              yPosController.reset(currentPose.getY());
+            })
+        .until(() -> xPosController.atGoal() && yPosController.atGoal());
+  }
+
   /**
    * Measures the velocity feedforward constants for the drive motors.
    *

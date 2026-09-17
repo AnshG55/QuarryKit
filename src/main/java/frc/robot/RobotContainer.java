@@ -11,7 +11,6 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -22,7 +21,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
@@ -35,7 +33,6 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -71,11 +68,12 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
 
-        vision =
-            new Vision(
-                drive::addVisionMeasurement,
-                new VisionIOLimelight(camera0Name, drive::getRotation),
-                new VisionIOLimelight(camera1Name, drive::getRotation));
+        // vision =
+        //     new Vision(
+        //         drive::addVisionMeasurement,
+        //         new VisionIOLimelight(camera0Name, drive::getRotation),
+        //         new VisionIOLimelight(camera1Name, drive::getRotation));
+        vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
         break;
 
       case SIM:
@@ -162,8 +160,8 @@ public class RobotContainer {
   private Command pathfindToPose(Pose2d targetPose) {
     PathConstraints constraints =
         new PathConstraints(
-            drive.getMaxLinearSpeedMetersPerSec(), // Max velocity m/s
-            drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
+            2, // drive.getMaxLinearSpeedMetersPerSec(), // Max velocity m/s
+            1, // drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
             8, // Max angular velocity rad/s
             20 // Max angular acceleration rad/s²
             );
@@ -253,11 +251,9 @@ public class RobotContainer {
     //                 drive, new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(60)))),
     //             new PathPlannerAuto("Example Auto")));
 
-    controller
-        .a()
-        .whileTrue(
-            new SequentialCommandGroup(
-                pathFindToParticularPose(), new PathPlannerAuto("Example Auto")));
+    controller.a().whileTrue(pathfindToPose(new Pose2d(2.43, 4.8, new Rotation2d(0))));
+
+    controller.b().whileTrue(DriveCommands.DriveASQ(drive));
   }
 
   /**
