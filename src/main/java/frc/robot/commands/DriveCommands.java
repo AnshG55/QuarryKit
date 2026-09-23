@@ -133,7 +133,7 @@ public class DriveCommands {
                   new ChassisSpeeds(
                       linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
                       linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                      omega);
+                      0);
               boolean isFlipped =
                   DriverStation.getAlliance().isPresent()
                       && DriverStation.getAlliance().get() == Alliance.Red;
@@ -230,48 +230,85 @@ public class DriveCommands {
     xPosController.setTolerance(0.02);
     yPosController.setTolerance(0.02);
 
-    Pose2d initialPose = drive.getPose();
+    return Commands.sequence(
+        Commands.run(
+                () -> {
+                  Pose2d initialPose = drive.getPose();
+                  Pose2d currentPose = drive.getPose();
+                  double yVelocity = yPosController.calculate(currentPose.getY(), -1);
+                  System.out.println("yvelocity" + yVelocity);
+                  System.out.println("InitialPose" + initialPose.getY());
+                  System.out.println(currentPose.getY());
 
-    return Commands.run(
-            () -> {
-              Pose2d currentPose = drive.getPose();
-              double xVelocity = xPosController.calculate(currentPose.getX(), currentPose.getX());
-              double yVelocity =
-                  yPosController.calculate(currentPose.getX(), initialPose.getY() - 1);
-              System.out.println(xVelocity);
-              System.out.println(xVelocity);
+                  ChassisSpeeds speeds = (new ChassisSpeeds(0, yVelocity, 0));
 
-              ChassisSpeeds speeds = (new ChassisSpeeds(0, yVelocity, 0));
+                  drive.runVelocity(speeds);
+                },
+                drive)
+            .beforeStarting(
+                () -> {
+                  drive.setPose(new Pose2d());
+                  Pose2d initialPose = drive.getPose();
+                  Pose2d currentPose = drive.getPose();
+                  xPosController.reset(currentPose.getX());
+                  yPosController.reset(currentPose.getY());
+                })
+            .until(() -> yPosController.atGoal()),
+        Commands.run(
+                () -> {
+                  System.out.println("itworky!!");
+                  Pose2d currentPose = drive.getPose();
+                  double xVelocity = xPosController.calculate(currentPose.getX(), -1);
 
-              drive.runVelocity(speeds);
-            },
-            drive)
-        .beforeStarting(
-            () -> {
-              Pose2d currentPose = drive.getPose();
-              xPosController.reset(currentPose.getX());
-              yPosController.reset(currentPose.getY());
-            })
-        .until(() -> xPosController.atGoal() && yPosController.atGoal())
-        .andThen(
-            () -> {
-              Pose2d currentPose = drive.getPose();
-              double xVelocity =
-                  xPosController.calculate(currentPose.getX(), initialPose.getX() - 1);
-              double yVelocity = yPosController.calculate(currentPose.getY(), currentPose.getY());
+                  ChassisSpeeds speeds = (new ChassisSpeeds(xVelocity, 0, 0));
 
-              ChassisSpeeds speeds = (new ChassisSpeeds(xVelocity, 0, 0));
+                  drive.runVelocity(speeds);
+                },
+                drive)
+            .beforeStarting(
+                () -> {
+                  Pose2d currentPose = drive.getPose();
+                  xPosController.reset(currentPose.getX());
+                  yPosController.reset(currentPose.getY());
+                })
+            .until(() -> xPosController.atGoal()),
+        Commands.run(
+                () -> {
+                  System.out.println("itworky!!");
+                  Pose2d currentPose = drive.getPose();
+                  double yVelocity = yPosController.calculate(currentPose.getY(), 0);
 
-              drive.runVelocity(speeds);
-            },
-            drive)
-        .beforeStarting(
-            () -> {
-              Pose2d currentPose = drive.getPose();
-              xPosController.reset(currentPose.getX());
-              yPosController.reset(currentPose.getY());
-            })
-        .until(() -> xPosController.atGoal() && yPosController.atGoal());
+                  ChassisSpeeds speeds = (new ChassisSpeeds(0, yVelocity, 0));
+
+                  drive.runVelocity(speeds);
+                },
+                drive)
+            .beforeStarting(
+                () -> {
+                  Pose2d currentPose = drive.getPose();
+                  xPosController.reset(currentPose.getX());
+                  yPosController.reset(currentPose.getY());
+                })
+            .until(() -> yPosController.atGoal()),
+        Commands.run(
+                () -> {
+                  Pose2d currentPose = drive.getPose();
+                  double xVelocity = xPosController.calculate(currentPose.getX(), 0);
+
+                  ChassisSpeeds speeds = (new ChassisSpeeds(xVelocity, 0, 0));
+
+                  System.out.println("xVel" + xVelocity);
+                  System.out.println("getx" + currentPose.getX());
+                  drive.runVelocity(speeds);
+                },
+                drive)
+            .beforeStarting(
+                () -> {
+                  Pose2d currentPose = drive.getPose();
+                  xPosController.reset(currentPose.getX());
+                  yPosController.reset(currentPose.getY());
+                })
+            .until(() -> xPosController.atGoal()));
   }
 
   /**
