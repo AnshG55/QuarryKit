@@ -196,6 +196,8 @@ public class DriveCommands {
                   ChassisSpeeds.fromFieldRelativeSpeeds(
                       xVelocity, yVelocity, omega, currentPose.getRotation());
 
+              System.out.println("HI");
+
               drive.runVelocity(speeds);
             },
             drive)

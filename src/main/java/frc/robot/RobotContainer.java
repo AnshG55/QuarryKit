@@ -11,18 +11,14 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
@@ -51,7 +47,8 @@ public class RobotContainer {
   private final Vision vision;
 
   // Controller
-  private final CommandXboxController controller = new CommandXboxController(0);
+  private final CommandXboxController operatorController = new CommandXboxController(1);
+  private final CommandPS5Controller driverController = new CommandPS5Controller(0);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -142,48 +139,36 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
-  public Translation2d getTranslationToHub() {
-    if (DriverStation.getAlliance().isEmpty()) {
-      return new Translation2d(0, 0);
-    }
-    if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) {
-      Translation2d originToBlueHub =
-          new Translation2d(Units.inchesToMeters(181.56), Units.inchesToMeters(158.32));
-      Translation2d blue = drive.getPose().getTranslation().minus(originToBlueHub).unaryMinus();
-      return blue;
-    } else {
-      Translation2d originToRedHub =
-          new Translation2d(Units.inchesToMeters(181.56 + 287), Units.inchesToMeters(158.32));
-      Translation2d red = drive.getPose().getTranslation().minus(originToRedHub).unaryMinus();
-      return red;
-    }
-  }
+  private static Command pathfindToPose(
+      Pose2d targetPose, CommandPS5Controller controller, Drive drive) {
 
-  private Command pathfindToPose(Pose2d targetPose) {
-    PathConstraints constraints =
-        new PathConstraints(
-            drive.getMaxLinearSpeedMetersPerSec(), // Max velocity m/s
-            drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
-            8, // Max angular velocity rad/s
-            20 // Max angular acceleration rad/s²
-            );
+    return Commands.run(
+        () -> {
+          double axis = 0;
+          double maxVelocity = 4;
+          double minVelocity = 0;
+          double range = maxVelocity - minVelocity;
+          if (controller.getRightY() >= 0) {
+            axis = controller.getRightY();
+          } else {
+            axis = 0;
+          }
 
-    return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
-  }
+          axis = controller.getRightY();
+          double speed = (range * axis) + minVelocity;
 
-  private Command pathFindToParticularPose() {
-    final Pose2d blueTowerStart =
-        new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(0)));
-    final Pose2d redTowerStart = FlippingUtil.flipFieldPose(blueTowerStart);
+          System.out.println(axis);
 
-    if (DriverStation.getAlliance().isEmpty()) {
-      return pathfindToPose(new Pose2d(0, 0, new Rotation2d(0)));
-    }
-    if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) {
-      return pathfindToPose(blueTowerStart);
-    } else {
-      return pathfindToPose(redTowerStart);
-    }
+          PathConstraints constraints =
+              new PathConstraints(
+                  speed, // Max velocity m/s
+                  drive.getMaxLinearSpeedMetersPerSecSq(), // Max acceleration m/s²
+                  8, // Max angular velocity rad/s
+                  20 // Max angular acceleration rad/s²
+                  );
+
+          AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
+        });
   }
 
   public void setIMUMODE(int mode) {
@@ -205,9 +190,9 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX()));
 
     // Lock to 0° when X button is held
     // controller
@@ -253,11 +238,8 @@ public class RobotContainer {
     //                 drive, new Pose2d(2.525, 3.692, new Rotation2d(Units.degreesToRadians(60)))),
     //             new PathPlannerAuto("Example Auto")));
 
-    controller
-        .a()
-        .whileTrue(
-            new SequentialCommandGroup(
-                pathFindToParticularPose(), new PathPlannerAuto("Example Auto")));
+    // driverController.L2().whileTrue(pathfindToPose(new Pose2d(), driverController));
+    driverController.circle().whileTrue(pathfindToPose(new Pose2d(), driverController, drive));
   }
 
   /**

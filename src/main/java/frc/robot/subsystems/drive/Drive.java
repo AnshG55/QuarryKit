@@ -163,8 +163,8 @@ public class Drive extends SubsystemBase {
   public void setDynamicRobotObstacles() {
     List<Pose2d> detectedRobots =
         List.of(
-            //new Pose2d(5.0, 3.0, Rotation2d.fromDegrees(74)),
-            //new Pose2d(5.0, 2.0, Rotation2d.fromDegrees(224))
+            // new Pose2d(5.0, 3.0, Rotation2d.fromDegrees(74)),
+            // new Pose2d(5.0, 2.0, Rotation2d.fromDegrees(224))
             );
 
     List<Pair<Translation2d, Translation2d>> obstacles = new ArrayList<>();
